@@ -420,14 +420,88 @@ class ShellAssistant:
             
             return True, stdout.decode().strip()
             
-        except Exception as e:
-            self.error_handler.log_error(e, {'command': command})
-            print(f"❌ Error executing command: {e}")
-            return False, str(e)
 
-# Plugin setup function
-async def setup():
-    """Initialize and return the ShellAssistant plugin"""
+async def cmd_install(self, *args):
+    """Install a package or dependency"""
+    if not self.permissions['install_packages']:
+        print("❌ Missing permission to install packages")
+        return False
+    
+    if not args:
+        print("Usage: install <package> [version]")
+        return False
+    
+    package = args[0]
+    version = args[1] if len(args) > 1 else None
+    
+    print(f"\n📦 Installing {package}{' ' + version if version else ''}...")
+    
+    try:
+        # Try system package manager first
+        if sys.platform == 'linux':
+            cmd = ['sudo', 'apt-get', 'install', '-y', package]
+        elif sys.platform == 'darwin':
+            cmd = ['brew', 'install', package]
+        else:
+            cmd = ['pip', 'install', package]
+        
+        await self._execute_command(' '.join(cmd))
+        return True
+        
+    except Exception as e:
+        self.error_handler.log_error(e, {'action': 'install_package', 'package': package})
+        print(f"❌ Failed to install {package}: {e}")
+        return False
+
+async def _execute_command(self, command: str) -> Tuple[bool, str]:
+    """Execute a shell command"""
+    if not self.permissions['execute_commands']:
+        print("❌ Missing permission to execute commands")
+        return False, "Permission denied"
+    
+    try:
+        print(f"$ {command}")
+        process = await asyncio.create_subprocess_shell(
+            command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        
+        # Stream the output
+        while True:
+            output = await process.stdout.readline()
+            if not output:
+                break
+            print(output.decode().strip())
+        
+        # Get any remaining output
+        stdout, stderr = await process.communicate()
+        
+        if process.returncode != 0:
+            error = stderr.decode().strip()
+            print(f"❌ Command failed: {error}")
+            return False, error
+        
+        return True, stdout.decode().strip()
+        
+    except Exception as e:
+        self.error_handler.log_error(e, {'command': command})
+        print(f"❌ Error executing command: {e}")
+        return False, str(e)
+
+def register(event_bus, shell):
+    """Register the shell assistant plugin
+    
+    Args:
+        event_bus: The event bus instance
+        shell: The shell instance
+    """
     assistant = ShellAssistant()
-    await assistant.initialize()
+    asyncio.create_task(assistant.initialize())
+    print("📦 Shell Assistant plugin loaded")
     return assistant
+
+# Plugin setup function (legacy support)
+def setup():
+    """Initialize and return the ShellAssistant plugin"""
+    return ShellAssistant()

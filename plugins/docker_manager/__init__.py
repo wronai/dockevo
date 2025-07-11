@@ -273,6 +273,21 @@ class DockerManager:
 # Create a singleton instance
 docker_manager = DockerManager()
 
-def get_docker_manager() -> DockerManager:
+def register(event_bus, shell):
+    """Register the docker manager plugin
+    
+    Args:
+        event_bus: The event bus instance
+        shell: The shell instance
+    """
+    # The docker manager is a core service that doesn't need to register commands
+    # as it's already available through the shell
+    if docker_manager.client:
+        print("🐳 Docker Manager: Connected to Docker")
+    else:
+        print("⚠️  Docker Manager: Docker not available")
+    return docker_manager
+
+def get_docker_manager():
     """Get the global Docker manager instance"""
     return docker_manager

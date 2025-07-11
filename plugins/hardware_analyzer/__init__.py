@@ -172,6 +172,18 @@ class HardwareAnalyzer:
 # Create a singleton instance
 hardware_analyzer = HardwareAnalyzer()
 
-def get_hardware_analyzer() -> HardwareAnalyzer:
+def register(event_bus, shell):
+    """Register the hardware analyzer plugin
+    
+    Args:
+        event_bus: The event bus instance
+        shell: The shell instance
+    """
+    # The hardware analyzer is a core service that doesn't need to register commands
+    # as it's already available through the shell
+    print("📦 Hardware Analyzer loaded")
+    return hardware_analyzer
+
+def get_hardware_analyzer():
     """Get the global hardware analyzer instance"""
     return hardware_analyzer

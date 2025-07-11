@@ -458,16 +458,25 @@ def unregister(event_bus, shell):
     async def load_plugin(self, plugin_path: Path, shell):
         """Załaduj plugin"""
         try:
-            plugin_name = plugin_path.stem
-            
+            # Determine importable module name and clean plugin name
+            if plugin_path.name == "__init__.py":
+                plugin_name = plugin_path.parent.name
+            else:
+                plugin_name = plugin_path.stem
+
+            module_name = f"plugins.{plugin_name}"
+
             # Unload if already loaded
             if plugin_name in self.plugins:
                 await self.unload_plugin(plugin_name, shell)
-            
-            # Load module
-            spec = importlib.util.spec_from_file_location(plugin_name, plugin_path)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
+
+            # Import (or reload) the module via importlib to keep package context
+            try:
+                module = importlib.import_module(module_name)
+                importlib.reload(module)  # hot-reload support
+            except ModuleNotFoundError as exc:
+                print(f"❌ Cannot import {module_name}: {exc}")
+                return False
             
             # Register plugin
             if hasattr(module, 'register'):
@@ -494,9 +503,25 @@ def unregister(event_bus, shell):
     
     async def load_all_plugins(self, shell):
         """Załaduj wszystkie pluginy"""
-        plugin_files = list(self.plugins_dir.glob("*.py"))
+        # Load .py files directly in the plugins directory
+        # Ignore helper/core/packaging files that are not real plugins
+        skip_files = {
+            "plugin_generator.py",
+            "plugin_manager.py",
+            "plugin_manager_core.py",
+            "setup.py",  # packaging script, not a plugin
+            "__init__.py",
+        }
+        plugin_files = [p for p in self.plugins_dir.glob("*.py") if p.name not in skip_files]
         for plugin_file in plugin_files:
             await self.load_plugin(plugin_file, shell)
+        
+        # Also look for __init__.py files in subdirectories
+        for item in self.plugins_dir.iterdir():
+            if item.is_dir():
+                init_file = item / "__init__.py"
+                if init_file.exists():
+                    await self.load_plugin(init_file, shell)
 
 class UsageTracker:
     """Śledzenie użycia dla self-learning"""

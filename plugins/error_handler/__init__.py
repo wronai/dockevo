@@ -107,6 +107,18 @@ class ErrorHandler:
 # Singleton instance
 error_handler = ErrorHandler()
 
+def register(event_bus, shell):
+    """Register the error handler plugin
+    
+    Args:
+        event_bus: The event bus instance
+        shell: The shell instance
+    """
+    # The error handler is a core service that doesn't need to register commands
+    # as it's already available through the shell
+    print(" Error Handler loaded")
+    return error_handler
+
 def get_error_handler() -> ErrorHandler:
     """Get the global error handler instance"""
     return error_handler

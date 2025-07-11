@@ -37,8 +37,25 @@ ErrorHandler = 'ErrorHandler'
 HardwareAnalyzer = 'HardwareAnalyzer'
 DockerManager = 'DockerManager'
 
+def register(event_bus, shell):
+    """Register core plugins with the system
+    
+    Args:
+        event_bus: The event bus instance
+        shell: The shell instance
+    """
+    # Core plugins are already loaded and registered
+    print("📦 Core plugins loaded")
+    return {
+        'plugin_manager': get_plugin_manager(),
+        'error_handler': get_error_handler(),
+        'hardware_analyzer': get_hardware_analyzer(),
+        'docker_manager': get_docker_manager()
+    }
+
 # Export public API
 __all__ = [
     'get_plugin_manager', 'get_error_handler',
-    'get_hardware_analyzer', 'get_docker_manager'
+    'get_hardware_analyzer', 'get_docker_manager',
+    'register'
 ]

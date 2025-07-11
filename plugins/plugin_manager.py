@@ -10,9 +10,9 @@ import pkgutil
 from pathlib import Path
 from typing import Dict, List, Optional, Type, Any, Callable
 
-from .error_handler import get_error_handler, ErrorHandler
-from .hardware_analyzer import get_hardware_analyzer, HardwareAnalyzer
-from .docker_manager import get_docker_manager, DockerManager
+from plugins.error_handler import get_error_handler, ErrorHandler
+from plugins.hardware_analyzer import get_hardware_analyzer, HardwareAnalyzer
+from plugins.docker_manager import get_docker_manager, DockerManager
 
 class PluginManager:
     def __init__(self):

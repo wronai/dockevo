@@ -12,49 +12,7 @@ import time
 from pathlib import Path
 from typing import Dict, List
 
-# ---------------------------------------------------------------------------
-# Template definitions (trimmed for brevity; add more as needed)
-# ---------------------------------------------------------------------------
-TEMPLATES: Dict[str, Dict] = {
-    "basic": {
-        "description": "Basic plugin template with stub commands",
-        "dependencies": [],
-        "features": ["commands"],
-    }
-}
-
-
-# ---------------------------------------------------------------------------
-# Helper for generating code
-# ---------------------------------------------------------------------------
-
-def _create_basic_plugin(plugin_name: str) -> str:
-    """Return Python source for a minimal plugin."""
-
-    ts = time.strftime("%Y-%m-%d %H:%M:%S")
-    return textwrap.dedent(
-        f'''
-        """{plugin_name.title()} Plugin (generated {ts})"""
-
-        VERSION = "0.1.0"
-        DESCRIPTION = "Auto-generated basic plugin"
-        commands = {{}}
-
-        def register(event_bus, shell):
-            """Register plugin commands with the shell."""
-            def cmd_hello(event):
-                name = (event.data.get("args") or ["World"])[0]
-                return f"Hello, {{name}} from {plugin_name}!"
-
-            shell.register_command("{plugin_name}-hello", cmd_hello)
-            commands["{plugin_name}-hello"] = cmd_hello
-            print("📦 {plugin_name} plugin loaded → {plugin_name}-hello")
-
-        def unregister(event_bus, shell):
-            shell.unregister_command("{plugin_name}-hello")
-            print("📦 {plugin_name} plugin unloaded")
-        '''
-    )
+from .templates import TEMPLATES, create_basic_plugin
 
 
 # ---------------------------------------------------------------------------
@@ -98,8 +56,8 @@ class PluginGenerator:
         if template not in TEMPLATES:
             return f"❌ Unknown template: {template}. Run 'templates' for a list."
 
-        # For now we only support the basic template
-        code = _create_basic_plugin(plugin_name)
+        # Generate plugin code using template helper
+        code = create_basic_plugin(plugin_name)
         plugin_dir = Path("plugins") / plugin_name
         plugin_dir.mkdir(parents=True, exist_ok=True)
         with open(plugin_dir / "__init__.py", "w", encoding="utf-8") as fp:

@@ -194,6 +194,17 @@ class SystemLog:
             self.error_handler.log_error(e, {'action': 'system_info'})
             return False
 
+def register(event_bus, shell):
+    """Register the system log plugin
+    
+    Args:
+        event_bus: The event bus instance
+        shell: The shell instance
+    """
+    system_log = SystemLog()
+    print("📦 System Log plugin loaded")
+    return system_log
+
 def setup():
-    """Plugin setup function"""
+    """Plugin setup function (legacy support)"""
     return SystemLog()

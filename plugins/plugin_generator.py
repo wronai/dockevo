@@ -1,12 +1,77 @@
 #!/usr/bin/env python3
-"""
-Plugin Generator for dockevOS MVP
-Automatycznie generuje pluginy na podstawie template'ów
+"""Backward-compatibility CLI wrapper for dockevOS *plugin-generator*.
 
-Usage:
-- Jako plugin w dockevOS: `generate plugin voice-enhanced`
-- Jako standalone: python plugin_generator.py voice-enhanced
+The actual generator lives in the folder plugin ``plugins.plugin_generator``.
+This thin wrapper keeps existing workflows that directly invoke
+``python plugins/plugin_generator.py …`` working.
 """
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from plugins.plugin_generator.cli import main  # noqa: E402
+
+if __name__ == "__main__":  # pragma: no cover – script entry-point
+    raise SystemExit(main(sys.argv[1:]))
+"""Backward-compatibility wrapper for dockevOS *plugin-generator*.
+
+The real implementation now lives in the folder-based plugin
+``plugins/plugin_generator``.  This thin wrapper imports the new CLI helper and
+forwards *argv* so existing scripts such as:
+
+    python plugins/plugin_generator.py basic my_plugin
+
+continue to work.
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+# Ensure project root is on *sys.path* so that the folder plugin can be imported
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+# Import the relocated CLI entry-point *after* path tweak
+from plugins.plugin_generator.cli import main  # noqa: E402
+
+if __name__ == "__main__":  # pragma: no cover – script entry-point
+    sys.exit(main(sys.argv[1:]))
+"""
+Legacy implementation removed. The following block is kept only as reference
+and is **not executed** by Python because it remains within this unclosed
+triple-quoted string.
+
+
+This script used to contain the full implementation.  The logic has been
+refactored into the folder-based plugin at ``plugins/plugin_generator``.
+
+It is kept purely for backward compatibility so that existing docs or user
+scripts that run ``python plugins/plugin_generator.py …`` continue to work.
+"""
+from __future__ import annotations
+
+import sys
+
+from pathlib import Path
+
+# Ensure project root on path so the folder-plugin can import
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from plugins.plugin_generator.cli import main  # noqa: E402 – after sys.path tweak
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
+# Legacy implementation removed – please use folder plugin instead.
+
 
 import os
 import json
@@ -82,7 +147,7 @@ def register(event_bus, shell):
             return "Usage: example <message>"
         
         message = ' '.join(args)
-        return f"✨ {plugin_name.title()}: {{message}}"
+        return f"✨ {plugin_name.title()}: {message}"
     
     def handle_status_command(event):
         """Show plugin status"""
@@ -93,25 +158,25 @@ def register(event_bus, shell):
         args = event.data.get('args', [])
         
         if not args:
-            return "Usage: {plugin_name}-config <key> [value]"
+            return f"Usage: {plugin_name}-config <key> [value]"
         
         # Simple config management
         config_file = Path(f'{plugin_name}_config.json')
-        config = {{}
+        config = {}
         
         if config_file.exists():
             try:
                 with open(config_file, 'r') as f:
                     config = json.load(f)
             except:
-                config = {{}
+                config = {}
         
         key = args[0]
         
         if len(args) == 1:
             # Get value
             value = config.get(key, 'Not set')
-            return f"🔧 {plugin_name}.{{key}} = {{value}}"
+            return f"🔧 {plugin_name}.{key} = {value}"
         else:
             # Set value
             value = ' '.join(args[1:])
@@ -176,7 +241,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 # Voice engine availability
-VOICE_ENGINES = {{}
+VOICE_ENGINES = {{}}
 
 try:
     import pyttsx3
@@ -206,7 +271,7 @@ class VoiceEnhanced:
         self.cache_dir.mkdir(exist_ok=True)
         
         # Default configuration
-        self.config = {{
+        self.config = {
             'engine': 'auto',
             'rate': 150,
             'pitch': 50,
@@ -239,7 +304,7 @@ class VoiceEnhanced:
     
     def init_engines(self):
         """Initialize available TTS engines"""
-        self.engines = {{}
+        self.engines = {{}}
         
         # Initialize pyttsx3
         if VOICE_ENGINES['pyttsx3']:
@@ -960,7 +1025,7 @@ class SystemMonitor:
     def collect_metrics(self) -> Dict:
         """Collect current system metrics"""
         if not PSUTIL_AVAILABLE:
-            return {{}
+            return {{}}
         
         try:
             metrics = {{
@@ -981,7 +1046,7 @@ class SystemMonitor:
             return metrics
         except Exception as e:
             print(f"❌ Error collecting metrics: {{e}}")
-            return {{}
+            return {{}}
     
     def check_alerts(self, metrics: Dict):
         """Check for alert conditions"""

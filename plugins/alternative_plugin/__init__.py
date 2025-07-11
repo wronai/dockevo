@@ -166,6 +166,17 @@ class AlternativePlugin:
         
         return False
 
+def register(event_bus, shell):
+    """Register the alternative plugin
+    
+    Args:
+        event_bus: The event bus instance
+        shell: The shell instance
+    """
+    plugin = AlternativePlugin()
+    print("📦 Alternative Plugin Manager loaded")
+    return plugin
+
 def setup():
-    """Plugin setup function"""
+    """Plugin setup function (legacy support)"""
     return AlternativePlugin()

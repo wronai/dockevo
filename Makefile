@@ -70,7 +70,7 @@ clean:
 ## Run the application
 run:
 	@echo "${GREEN}Starting Dockevos...${RESET}"
-	python -m dockevos
+	python3 run.py
 
 ## Build documentation
 docs:

@@ -1,39 +1,28 @@
-"""dockevOS Plugin Manager (Core)
+"""dockevOS Plugin Manager Package
 ================================
 
-This package is a thin wrapper that exposes the core `plugin_manager` singleton
-and related classes while satisfying the rule that **every plugin (even the
-manager itself) lives in its own directory with an `__init__.py`.**
-
-It simply re-exports the contents of the legacy module
-`plugins.plugin_manager` so other modules can continue to import
+This directory plugin allows `plugins.plugin_manager` to behave as normal while
+keeping the actual implementation in `plugins.plugin_manager_core`.  All public
+symbols are re-exported so existing imports continue to work.
 `plugins.plugin_manager` as before.
 """
 
-import importlib.util
-import importlib.machinery
-from pathlib import Path
+from importlib import import_module as _import
 
-# ---------------------------------------------------------------------------
-# Dynamically load the original single-file implementation that lives one
-# directory up (plugins/plugin_manager.py).  We register it under a private
-# module name to avoid circular-import issues, then re-export its public API.
-# ---------------------------------------------------------------------------
-_core_path = Path(__file__).parent.parent / "plugin_manager.py"
+_core_mod = _import("plugins.plugin_manager_core")
 
-# Construct a new module spec + module object
-_spec = importlib.util.spec_from_file_location("plugins._plugin_manager_core", _core_path)
-_core_mod = importlib.util.module_from_spec(_spec)
-loader = _spec.loader  # type: ignore[attr-defined]
-assert loader is not None
-loader.exec_module(_core_mod)  # type: ignore[arg-type]
-
-# Inject into sys.modules so `import plugins._plugin_manager_core` works
-import sys as _sys
-_sys.modules[_spec.name] = _core_mod
-
-# Re-export everything except dunder names so
-# `import plugins.plugin_manager` gives the same symbols.
 globals().update({k: v for k, v in _core_mod.__dict__.items() if not k.startswith("__")})
 
-__all__ = [k for k in globals() if not k.startswith("__")]
+def register(event_bus, shell):
+    """Register the plugin manager plugin
+    
+    Args:
+        event_bus: The event bus instance
+        shell: The shell instance
+    """
+    # The plugin manager is a special case that doesn't need to register commands
+    # as it's already available through the shell
+    print("📦 Plugin Manager loaded")
+    return plugin_manager
+
+__all__ = [k for k in globals() if not k.startswith("__")] + ['register']
