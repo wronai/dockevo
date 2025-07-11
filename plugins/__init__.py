@@ -1,4 +1,4 @@
-""
+"""
 dockevOS Plugin System
 ======================
 
@@ -12,16 +12,33 @@ To create a new plugin, add a Python module in this directory with a `setup()` f
 that returns an instance of your plugin class.
 """
 
-# Import core components for easier access
-from .plugin_manager import get_plugin_manager, PluginManager
-from .error_handler import get_error_handler, ErrorHandler
-from .hardware_analyzer import get_hardware_analyzer, HardwareAnalyzer
-from .docker_manager import get_docker_manager, DockerManager
+
+"""Lazy access helpers to core plugin system components."""
+
+def get_plugin_manager():
+    from .plugin_manager import plugin_manager  # noqa: import inside
+    return plugin_manager
+
+def get_error_handler():
+    from .error_handler import error_handler
+    return error_handler
+
+def get_hardware_analyzer():
+    from .hardware_analyzer import hardware_analyzer
+    return hardware_analyzer
+
+def get_docker_manager():
+    from .docker_manager import docker_manager
+    return docker_manager
+
+# Public API names
+PluginManager = 'PluginManager'
+ErrorHandler = 'ErrorHandler'
+HardwareAnalyzer = 'HardwareAnalyzer'
+DockerManager = 'DockerManager'
 
 # Export public API
 __all__ = [
-    'get_plugin_manager', 'PluginManager',
-    'get_error_handler', 'ErrorHandler',
-    'get_hardware_analyzer', 'HardwareAnalyzer',
-    'get_docker_manager', 'DockerManager'
+    'get_plugin_manager', 'get_error_handler',
+    'get_hardware_analyzer', 'get_docker_manager'
 ]

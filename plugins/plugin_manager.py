@@ -4,6 +4,7 @@ Handles loading, unloading, and managing plugins
 """
 
 import importlib
+import asyncio
 import inspect
 import pkgutil
 from pathlib import Path
@@ -43,10 +44,16 @@ class PluginManager:
         for plugin_name in core_plugins:
             self._load_plugin(f'plugins.{plugin_name}')
         
-        # Load other plugins
-        for finder, name, _ in pkgutil.iter_modules([str(self.plugins_dir)]):
-            if name not in core_plugins and not name.startswith('_'):
-                self._load_plugin(f'plugins.{name}')
+        # Load other plugins (only subdirectories with __init__.py)
+        for entry in self.plugins_dir.iterdir():
+            if not entry.is_dir():
+                continue  # Only consider directories as plugins
+            name = entry.name
+            if name in core_plugins or name in {'__pycache__', 'plugin_generator'} or name.startswith('_'):
+                continue
+            if not (entry / '__init__.py').exists():
+                continue  # Not a Python package
+            self._load_plugin(f'plugins.{name}')
         
         print(f"✅ Loaded {len(self.plugins)} plugins")
     
@@ -61,7 +68,11 @@ class PluginManager:
             
             # Initialize plugin if it has a setup function
             if hasattr(module, 'setup'):
-                plugin = module.setup()
+                plugin_obj = module.setup()
+                # If the setup function returns a coroutine, run it synchronously
+                if asyncio.iscoroutine(plugin_obj):
+                    plugin_obj = asyncio.run(plugin_obj)
+                plugin = plugin_obj
                 self.plugins[module_name] = plugin
                 print(f"  ✅ {module_name.split('.')[-1]}")
                 

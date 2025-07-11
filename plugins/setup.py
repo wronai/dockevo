@@ -1,6 +1,7 @@
-""
+"""
 Setup for dockevOS Plugins
 """
+
 
 from setuptools import setup, find_packages
 
@@ -35,7 +36,7 @@ setup(
     url="https://github.com/wronai/dockevos",
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

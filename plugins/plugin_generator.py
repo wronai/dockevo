@@ -97,14 +97,14 @@ def register(event_bus, shell):
         
         # Simple config management
         config_file = Path(f'{plugin_name}_config.json')
-        config = {{}}
+        config = {{}
         
         if config_file.exists():
             try:
                 with open(config_file, 'r') as f:
                     config = json.load(f)
             except:
-                config = {{}}
+                config = {{}
         
         key = args[0]
         
@@ -140,13 +140,13 @@ def unregister(event_bus, shell):
     print(f"📦 {plugin_name.title()} plugin unloaded")
 
 # Plugin metadata
-PLUGIN_INFO = {{
+PLUGIN_INFO = {
     "name": "{plugin_name}",
     "version": "1.0.0",
     "description": "{description}",
     "author": "Plugin Generator",
     "generated": "{time.strftime('%Y-%m-%d %H:%M:%S')}"
-}}
+}
 '''
 
 def generate_voice_enhanced_plugin(plugin_name: str, description: str) -> str:
@@ -176,7 +176,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 # Voice engine availability
-VOICE_ENGINES = {{}}
+VOICE_ENGINES = {{}
 
 try:
     import pyttsx3
@@ -214,7 +214,7 @@ class VoiceEnhanced:
             'voice_id': 0,
             'language': 'en',
             'cache_enabled': True
-        }}
+        }
         
         self.load_config()
         self.init_engines()
@@ -239,7 +239,7 @@ class VoiceEnhanced:
     
     def init_engines(self):
         """Initialize available TTS engines"""
-        self.engines = {{}}
+        self.engines = {{}
         
         # Initialize pyttsx3
         if VOICE_ENGINES['pyttsx3']:
@@ -377,13 +377,13 @@ class VoiceEnhanced:
             'engines_available': self.get_available_engines(),
             'current_engine': self.config['engine'],
             'config': self.config.copy()
-        }}
+        }
         
         if VOICE_ENGINES['pyttsx3'] and 'pyttsx3' in self.engines:
             try:
                 voices = self.engines['pyttsx3'].getProperty('voices')
                 info['pyttsx3_voices'] = [
-                    {{'id': i, 'name': v.name, 'lang': getattr(v, 'languages', ['unknown'])[0]}}
+                    {{'id': i, 'name': v.name, 'lang': getattr(v, 'languages', ['unknown'])[0]}
                     for i, v in enumerate(voices or [])
                 ]
             except:
@@ -531,7 +531,7 @@ def unregister(event_bus, shell):
     print("📦 Voice Enhanced plugin unloaded")
 
 # Plugin metadata
-PLUGIN_INFO = {{
+PLUGIN_INFO = {
     "name": "voice_enhanced",
     "version": "1.0.0",
     "description": "Enhanced voice control with multiple TTS engines",
@@ -539,7 +539,7 @@ PLUGIN_INFO = {{
     "dependencies": ["pyttsx3", "gtts", "pygame"],
     "features": ["voice", "tts", "caching", "multi_engine"],
     "generated": "{time.strftime('%Y-%m-%d %H:%M:%S')}"
-}}
+}
 '''
 
 def generate_docker_advanced_plugin(plugin_name: str, description: str) -> str:
@@ -880,7 +880,7 @@ def unregister(event_bus, shell):
     print("📦 Docker Advanced plugin unloaded")
 
 # Plugin metadata
-PLUGIN_INFO = {{
+PLUGIN_INFO = {
     "name": "docker_advanced",
     "version": "1.0.0",
     "description": "Advanced Docker management with compose support",
@@ -888,7 +888,7 @@ PLUGIN_INFO = {{
     "dependencies": ["docker", "docker-compose", "pyyaml"],
     "features": ["docker", "compose", "networking", "volumes"],
     "generated": "{time.strftime('%Y-%m-%d %H:%M:%S')}"
-}}
+}
 '''
 
 def generate_system_monitor_plugin(plugin_name: str, description: str) -> str:
@@ -934,7 +934,7 @@ class SystemMonitor:
             'memory_threshold': 85.0,
             'disk_threshold': 90.0,
             'enabled': True
-        }}
+        }
         self.config_file = Path('system_monitor_config.json')
         self.load_config()
         
@@ -951,7 +951,7 @@ class SystemMonitor:
     def save_config(self):
         """Save monitor configuration"""
         try:
-            config = {{'alerts': self.alerts}}
+            config = {{'alerts': self.alerts}
             with open(self.config_file, 'w') as f:
                 json.dump(config, f, indent=2)
         except Exception as e:
@@ -960,7 +960,7 @@ class SystemMonitor:
     def collect_metrics(self) -> Dict:
         """Collect current system metrics"""
         if not PSUTIL_AVAILABLE:
-            return {{}}
+            return {{}
         
         try:
             metrics = {{
@@ -971,7 +971,7 @@ class SystemMonitor:
                 'network': psutil.net_io_counters()._asdict(),
                 'processes': len(psutil.pids()),
                 'load_avg': psutil.getloadavg() if hasattr(psutil, 'getloadavg') else (0, 0, 0)
-            }}
+            }
             
             # Store in history
             self.data_history['cpu'].append(metrics['cpu_percent'])
@@ -981,7 +981,7 @@ class SystemMonitor:
             return metrics
         except Exception as e:
             print(f"❌ Error collecting metrics: {{e}}")
-            return {{}}
+            return {{}
     
     def check_alerts(self, metrics: Dict):
         """Check for alert conditions"""
@@ -1058,16 +1058,16 @@ class SystemMonitor:
         
         status = f"""📊 System Status:
 ─────────────────────────────────────────
- CPU Usage:    {{metrics['cpu_percent']:6.1f}}% │ {{self._get_bar(metrics['cpu_percent'])}}
- Memory:       {{mem['percent']:6.1f}}% │ {{self._get_bar(mem['percent'])}}
- Disk Usage:   {{disk['percent']:6.1f}}% │ {{self._get_bar(disk['percent'])}}
+ CPU Usage:    {{metrics['cpu_percent']:6.1f}}% │ {{self._get_bar(metrics['cpu_percent'])}
+ Memory:       {{mem['percent']:6.1f}}% │ {{self._get_bar(mem['percent'])}
+ Disk Usage:   {{disk['percent']:6.1f}}% │ {{self._get_bar(disk['percent'])}
 ─────────────────────────────────────────
 
 💾 Memory: {{mem_used_gb:.1f}}GB / {{mem_total_gb:.1f}}GB
 💿 Disk:   {{disk_used_gb:.1f}}GB / {{disk_total_gb:.1f}}GB
-🔄 Processes: {{metrics['processes']}}
-⏰ Uptime: {{uptime_str}}
-📈 Load Avg: {{metrics['load_avg'][0]:.2f}}, {{metrics['load_avg'][1]:.2f}}, {{metrics['load_avg'][2]:.2f}}
+🔄 Processes: {{metrics['processes']}
+⏰ Uptime: {{uptime_str}
+📈 Load Avg: {{metrics['load_avg'][0]:.2f}}, {{metrics['load_avg'][1]:.2f}}, {{metrics['load_avg'][2]:.2f}
 🔔 Monitoring: {{'ON' if self.monitoring else 'OFF'}}"""
         
         return status
@@ -1250,7 +1250,7 @@ def unregister(event_bus, shell):
     print("📦 System Monitor plugin unloaded")
 
 # Plugin metadata
-PLUGIN_INFO = {{
+PLUGIN_INFO = {
     "name": "system_monitor",
     "version": "1.0.0",
     "description": "Advanced system monitoring and alerting",
@@ -1258,8 +1258,8 @@ PLUGIN_INFO = {{
     "dependencies": ["psutil"],
     "features": ["monitoring", "alerts", "visualization", "history"],
     "generated": "{time.strftime('%Y-%m-%d %H:%M:%S')}"
-}}
-'''
+}
+
 
 class PluginGenerator:
     """Main plugin generator class"""
@@ -1317,11 +1317,11 @@ class PluginGenerator:
             
             result = f"""✅ Plugin generated successfully!
 
-📁 File: {{plugin_file}}
-📦 Template: {{template_name}}
-🔧 Features: {{', '.join(template_info['features'])}}
+📁 File: {{plugin_file}
+📦 Template: {{template_name}
+🔧 Features: {{', '.join(template_info['features'])}
 
-{{f'📥 Install dependencies: {{install_cmd}}' if deps else '✨ No dependencies required'}}
+{{f'📥 Install dependencies: {{install_cmd}}' if deps else '✨ No dependencies required'}
 
 🚀 Usage:
   1. Install dependencies (if any)
@@ -1345,7 +1345,7 @@ class PluginGenerator:
             "description": description,
             "dependencies": dependencies,
             "features": features
-        }}
+        }
         
         return f"✅ Custom template '{{template_name}}' created with features: {{', '.join(features)}}"
 
@@ -1421,7 +1421,7 @@ def unregister(event_bus, shell):
     print("📦 Plugin Generator unloaded")
 
 # Plugin metadata
-PLUGIN_INFO = {{
+PLUGIN_INFO = {
     "name": "plugin_generator",
     "version": "1.0.0",
     "description": "Generate new plugins from templates",
@@ -1429,7 +1429,7 @@ PLUGIN_INFO = {{
     "dependencies": [],
     "features": ["generation", "templates", "automation"],
     "generated": time.strftime('%Y-%m-%d %H:%M:%S')
-}}
+}
 
 # CLI usage
 if __name__ == "__main__":
