@@ -356,15 +356,15 @@ EOF
 create_launcher() {
     log "Creating launcher script..."
     
-    cat > run-container-os.sh << 'EOF'
+    cat > run-dockevos.sh << 'EOF'
 #!/bin/bash
 
 # dockevOS MVP Launcher
 echo "🚀 Starting dockevOS MVP..."
 
 # Check if main file exists
-if [ ! -f "container-os.py" ]; then
-    echo "❌ container-os.py not found"
+if [ ! -f "dockevos.py" ]; then
+    echo "❌ dockevos.py not found"
     echo "Please run this script from the dockevOS directory"
     exit 1
 fi
@@ -376,12 +376,12 @@ python3 -c "import docker, psutil" 2>/dev/null || {
 }
 
 # Start dockevOS
-python3 container-os.py
+python3 dockevos.py
 EOF
 
-    chmod +x run-container-os.sh
+    chmod +x run-dockevos.sh
     
-    log "Launcher script created: run-container-os.sh"
+    log "Launcher script created: run-dockevos.sh"
 }
 
 create_readme() {
@@ -399,9 +399,9 @@ Minimalna wersja dockevOS - jeden plik Python realizujący pełną funkcjonalno�
 ./setup.sh
 
 # Run
-./run-container-os.sh
+./run-dockevos.sh
 # OR
-python3 container-os.py
+python3 dockevos.py
 ```
 
 ## ✨ Features
@@ -415,14 +415,14 @@ python3 container-os.py
 ## 🎯 Basic Commands
 
 ```bash
-container-os> help          # Show all commands
-container-os> ps            # List containers
-container-os> start nginx   # Start container
-container-os> stop nginx    # Stop container
-container-os> info          # System information
-container-os> speak hello   # Text-to-speech test
-container-os> plugins       # List loaded plugins
-container-os> stats         # Usage statistics
+dockevos> help          # Show all commands
+dockevos> ps            # List containers
+dockevos> start nginx   # Start container
+dockevos> stop nginx    # Stop container
+dockevos> info          # System information
+dockevos> speak hello   # Text-to-speech test
+dockevos> plugins       # List loaded plugins
+dockevos> stats         # Usage statistics
 ```
 
 ## 🧩 Plugin Development
@@ -466,10 +466,10 @@ def unregister(event_bus, shell):
 
 ```bash
 # Test TTS
-container-os> speak "Hello dockevOS"
+dockevos> speak "Hello dockevOS"
 
 # Voice feedback on actions
-container-os> start nginx
+dockevos> start nginx
 🔊 "Container nginx started"
 ```
 
@@ -503,10 +503,10 @@ Works with local Docker daemon:
 ## 📁 File Structure
 
 ```
-container-os/
-├── container-os.py     # Main application (single file!)
+dockevos/
+├── dockevos.py     # Main application (single file!)
 ├── setup.sh           # Setup script
-├── run-container-os.sh    # Launcher
+├── run-dockevos.sh    # Launcher
 ├── plugins/               # Plugin directory
 │   ├── sample_plugin.py   # Basic examples
 │   ├── advanced_plugin.py # Advanced features
@@ -535,14 +535,14 @@ show_completion() {
     echo -e "${GREEN}🎉 dockevOS MVP Setup Complete!${NC}"
     echo ""
     echo "📁 Created files:"
-    echo "  • container-os.py     - Main application"
+    echo "  • dockevos.py     - Main application"
     echo "  • setup.sh           - This setup script"
-    echo "  • run-container-os.sh    - Launcher script"
+    echo "  • run-dockevos.sh    - Launcher script"
     echo "  • plugins/               - Plugin directory with examples"
     echo "  • README.md          - Documentation"
     echo ""
     echo "🚀 Quick start:"
-    echo "  ./run-container-os.sh"
+    echo "  ./run-dockevos.sh"
     echo ""
     echo "💡 Try these commands:"
     echo "  help              - Show all commands"

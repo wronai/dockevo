@@ -7,7 +7,7 @@ Instalacja:
 pip install docker psutil
 
 Uruchomienie:
-python container-os.py
+python dockevos.py
 
 Funkcje:
 - Interfejs tekstowy z komendami
@@ -115,21 +115,57 @@ class VoiceService:
                     os.makedirs(os.path.dirname(model_path), exist_ok=True)
                     zip_path = os.path.join(os.path.dirname(model_path), 'model.zip')
                     
-                    # Download the model
-                    url = 'https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip'
-                    urllib.request.urlretrieve(url, zip_path)
-                    
-                    # Extract the model
-                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                        zip_ref.extractall(os.path.dirname(model_path))
-                    
-                    # Clean up
-                    os.remove(zip_path)
+                    try:
+                        # Download the model
+                        url = 'https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip'
+                        urllib.request.urlretrieve(url, zip_path)
+                        
+                        # Extract the model
+                        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                            zip_ref.extractall(os.path.dirname(model_path))
+                        
+                        # Clean up
+                        os.remove(zip_path)
+                    except Exception as e:
+                        print(f"⚠️  Failed to download Vosk model: {e}")
+                        print("💡 Please download it manually and extract to ~/.cache/vosk/models/")
+                        self.stt_available = False
+                        return
                 
                 # Initialize the model and recognizer
+                print("🔊 Initializing Vosk model...")
                 self.vosk_model = vosk.Model(model_path)
                 self.vosk_recognizer = vosk.KaldiRecognizer(self.vosk_model, 16000)
+                
+                # Initialize PyAudio with device selection
+                print("🔍 Detecting audio devices...")
                 self.pyaudio = pyaudio.PyAudio()
+                
+                # List available input devices
+                info = self.pyaudio.get_host_api_info_by_index(0)
+                num_devices = info.get('deviceCount')
+                
+                print("\nAvailable audio devices:")
+                print("----------------------")
+                for i in range(0, num_devices):
+                    device_info = self.pyaudio.get_device_info_by_host_api_device_index(0, i)
+                    if device_info.get('maxInputChannels') > 0:
+                        print(f"{i}: {device_info.get('name')} (Input Channels: {device_info.get('maxInputChannels')})")
+                
+                # Try to find a suitable input device
+                self.input_device_index = None
+                for i in range(0, num_devices):
+                    device_info = self.pyaudio.get_device_info_by_host_api_device_index(0, i)
+                    if device_info.get('maxInputChannels') > 0:
+                        self.input_device_index = i
+                        break
+                
+                if self.input_device_index is None:
+                    print("❌ No suitable input device found")
+                    self.stt_available = False
+                    return
+                
+                print(f"\n🎤 Using input device: {self.pyaudio.get_device_info_by_index(self.input_device_index).get('name')}")
                 self.stt_available = True
                 
             elif self.stt_engine == 'whisper':
@@ -140,9 +176,12 @@ class VoiceService:
             
         except Exception as e:
             print(f"⚠️  STT initialization error: {e}")
-            print("   Try: pip install pyaudio")
-            if 'No module named ' in str(e):
-                print(f"   Missing module: {str(e).split()[-1]}")
+            import traceback
+            traceback.print_exc()
+            print("\n💡 Try installing system dependencies:")
+            print("Ubuntu/Debian: sudo apt-get install portaudio19-dev python3-pyaudio")
+            print("macOS: brew install portaudio")
+            print("Windows: pip install pipwin && pipwin install pyaudio")
             self.stt_available = False
         
     def _check_tts(self) -> bool:
@@ -171,7 +210,7 @@ class VoiceService:
             print(f"❌ TTS Error: {e}")
             return False
             
-    def listen(self, timeout=10) -> str:
+    def listen(self, timeout=30) -> str:
         """Listen for speech and return transcribed text
         
         Args:
@@ -183,71 +222,109 @@ class VoiceService:
         if not self.stt_available or not hasattr(self, 'vosk_recognizer'):
             print("❌ STT is not available. Make sure you have a microphone and required dependencies.")
             print("💡 Try: pip install pyaudio")
+            if not hasattr(self, 'pyaudio'):
+                print("💡 You may need to install system dependencies:")
+                print("   - Ubuntu/Debian: sudo apt-get install portaudio19-dev python3-pyaudio")
+                print("   - macOS: brew install portaudio")
+                print("   - Windows: pip install pipwin && pipwin install pyaudio")
             return ""
             
-        print("🎤 Listening... (press Ctrl+C to stop)")
+        print("\n🎤 Listening... (press Ctrl+C to stop or wait for silence to end)")
         
+        stream = None
         try:
-            # Open microphone stream
+            # Open microphone stream with the selected device
             stream = self.pyaudio.open(
                 format=pyaudio.paInt16,
                 channels=1,
                 rate=16000,
                 input=True,
-                frames_per_buffer=8000
+                input_device_index=self.input_device_index,
+                frames_per_buffer=4096
             )
-            stream.start_stream()
+            
+            print("🔊 Speak now...")
+            
+            # Reset the recognizer to clear any previous state
+            self.vosk_recognizer.Reset()
             
             start_time = time.time()
-            silence_start = None
+            last_activity = time.time()
             result_text = ""
             
             while True:
                 # Check for timeout
-                if timeout > 0 and (time.time() - start_time) > timeout:
+                current_time = time.time()
+                if timeout > 0 and (current_time - start_time) > timeout:
                     print("\n⏱️  Timeout reached")
                     break
-                    
-                # Read audio data
-                data = stream.read(4000, exception_on_overflow=False)
                 
-                if len(data) == 0:
-                    break
+                try:
+                    # Read audio data in smaller chunks for more responsive processing
+                    data = stream.read(2048, exception_on_overflow=False)
                     
-                # Process audio with Vosk
-                if self.vosk_recognizer.AcceptWaveform(data):
-                    result = json.loads(self.vosk_recognizer.Result())
-                    if 'text' in result and result['text']:
-                        result_text = result['text']
-                        print(f"\r🎤 Heard: {result_text}", end='', flush=True)
-                        silence_start = None
-                else:
-                    # Check for silence to end of speech
-                    partial = json.loads(self.vosk_recognizer.PartialResult())
-                    if 'partial' in partial and partial['partial']:
-                        print(f"\r🎤 Heard: {partial['partial']}", end='', flush=True)
-                        silence_start = None
-                    elif silence_start is None:
-                        silence_start = time.time()
-                    elif (time.time() - silence_start) > 1.5:  # 1.5 seconds of silence
-                        print("\n🔇 End of speech detected")
+                    if len(data) == 0:
+                        print("\n⚠️  No audio data received from microphone")
                         break
+                    
+                    # Process audio with Vosk
+                    if self.vosk_recognizer.AcceptWaveform(data):
+                        result = json.loads(self.vosk_recognizer.Result())
+                        if 'text' in result and result['text']:
+                            result_text = result['text']
+                            print(f"\r🎤 Heard: {result_text}", end='', flush=True)
+                            last_activity = time.time()
+                    else:
+                        # Check for partial results
+                        partial = json.loads(self.vosk_recognizer.PartialResult())
+                        if 'partial' in partial and partial['partial']:
+                            print(f"\r🎤 Heard: {partial['partial']}", end='', flush=True)
+                            last_activity = time.time()
                         
-            # Clean up
-            stream.stop_stream()
-            stream.close()
+                        # Check for silence to end of speech (3 seconds of no new input)
+                        if (current_time - last_activity) > 3.0:
+                            if last_activity > start_time:  # Only end if we've heard something
+                                print("\n🔇 End of speech detected")
+                                break
+                
+                except IOError as e:
+                    if e.errno == -9981:  # Input overflowed
+                        print("\n⚠️  Audio input overflow - continuing...")
+                        continue
+                    raise
+                
+                # Small sleep to prevent CPU overuse
+                time.sleep(0.01)
             
-            print()  # New line after the final flush
             return result_text.strip()
             
         except KeyboardInterrupt:
             print("\n⏹️  Stopped listening")
             return ""
+            
         except Exception as e:
             print(f"\n❌ STT Error: {e}")
+            import traceback
+            traceback.print_exc()
+            
             if 'No default input device' in str(e):
-                print("   No microphone found. Please check your audio input devices.")
+                print("\n💡 No microphone found. Please check your audio input devices:")
+                print("1. Make sure your microphone is properly connected")
+                print("2. Check system sound settings")
+                print("3. Try a different input device if available")
+            
             return ""
+            
+        finally:
+            # Ensure the stream is always closed properly
+            if stream:
+                try:
+                    stream.stop_stream()
+                    stream.close()
+                except:
+                    pass
+                
+            print()  # Ensure we end on a new line
 
 class DockerService:
     """Docker management service"""
@@ -537,7 +614,7 @@ class ContainerOSMVP:
         
         while self.running:
             try:
-                command_line = input("container-os> ").strip()
+                command_line = input("dockevos> ").strip()
                 
                 if command_line:
                     await self._execute_command(command_line)
