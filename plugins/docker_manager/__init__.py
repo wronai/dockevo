@@ -25,6 +25,41 @@ class DockerManager:
             print("❌ Docker is not running or not installed")
             return None
     
+    def list_images(self, args: List[str] = None) -> None:
+        """List all Docker images
+        
+        Args:
+            args: Additional arguments (unused)
+        """
+        if not self.client:
+            print("❌ Docker is not available")
+            return
+            
+        try:
+            images = self.client.images.list()
+            if not images:
+                print("No Docker images found")
+                return
+                
+            print("\nDocker Images:")
+            print("-" * 80)
+            print(f"{'REPOSITORY':<30} {'TAG':<20} {'IMAGE ID':<12} {'SIZE':<10}")
+            print("-" * 80)
+            
+            for image in images:
+                if not image.tags:
+                    continue
+                repo_tag = image.tags[0].split(':')
+                repo = repo_tag[0] if len(repo_tag) > 0 else '<none>'
+                tag = repo_tag[1] if len(repo_tag) > 1 else 'latest'
+                image_id = image.short_id.split(':')[-1][:12]
+                size = f"{image.attrs['Size'] / (1024 * 1024):.2f}MB"
+                print(f"{repo[:28]:<30} {tag:<20} {image_id:<12} {size:<10}")
+                
+        except Exception as e:
+            self.error_handler.log_error(e, {'context': 'Listing Docker images'})
+            print(f"❌ Failed to list Docker images: {str(e)}")
+    
     def _register_commands(self):
         """Register Docker management commands"""
         self.commands = {
