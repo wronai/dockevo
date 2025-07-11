@@ -1,14 +1,18 @@
 #!/bin/bash
 set -e
 
+# Colors
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
-NC='\033[0m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
+# Logging functions
 log() { echo -e "${GREEN}[SETUP]${NC} $1"; }
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
 show_banner() {
     echo -e "${BLUE}"
@@ -554,16 +558,70 @@ show_completion() {
     echo "Happy containerizing! 🐳"
 }
 
+# Check if running in a virtual environment
+in_venv() {
+    python3 -c 'import sys; sys.exit(0) if hasattr(sys, "real_prefix") or (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix) else sys.exit(1)'
+}
+
+# Create virtual environment if not exists
+create_venv() {
+    if [ ! -d "venv" ]; then
+        log "Creating virtual environment..."
+        python3 -m venv venv
+        source venv/bin/activate
+    elif ! in_venv; then
+        log "Activating existing virtual environment..."
+        source venv/bin/activate
+    fi
+}
+
+# Install development dependencies
+install_dev_dependencies() {
+    log "Installing development dependencies..."
+    pip install -e ".[dev]"
+}
+
+# Install STT dependencies
+install_stt_dependencies() {
+    log "Installing optional STT dependencies..."
+    pip install -e ".[stt]"
+}
+
 # Main execution
 main() {
     show_banner
+    
+    # Check Python version
     check_python
-    install_dependencies
+    
+    # Create and activate virtual environment
+    create_venv
+    
+    # Install core dependencies
+    log "Installing core dependencies..."
+    pip install -e .
+    
+    # Install development dependencies
+    read -p "Install development dependencies? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        install_dev_dependencies
+    fi
+    
+    # Install STT dependencies
+    read -p "Install STT (Speech-to-Text) dependencies? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        install_stt_dependencies
+    fi
+    
+    # Check Docker
     check_docker
+    
+    # Setup audio
     setup_audio
-    create_project_structure
-    create_launcher
-    create_readme
+    
+    # Show completion message
     show_completion
 }
 

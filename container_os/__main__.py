@@ -77,7 +77,73 @@ class VoiceService:
     """Minimalny voice service używający systemowych narzędzi"""
     def __init__(self):
         self.tts_available = self._check_tts()
-        self.stt_available = False  # Uproszczone dla MVP
+        self.stt_available = self._check_stt()
+        self.stt_engine = None
+        if self.stt_available:
+            self._init_stt_engine()
+            
+    def _check_stt(self) -> bool:
+        """Sprawdź dostępność STT"""
+        # Check for common STT tools
+        stt_tools = ['pocketsphinx', 'vosk', 'whisper']
+        for tool in stt_tools:
+            if subprocess.run(['which', tool], capture_output=True).returncode == 0:
+                self.stt_engine = tool
+                return True
+        return False
+        
+    def _init_stt_engine(self):
+        """Initialize the selected STT engine"""
+        try:
+            if self.stt_engine == 'pocketsphinx':
+                # Minimal configuration for pocketsphinx
+                import pocketsphinx
+                self.stt_available = True
+                
+            elif self.stt_engine == 'vosk':
+                # Initialize Vosk
+                import vosk
+                import pyaudio
+                
+                # Download Vosk model if not exists
+                model_path = os.path.expanduser('~/.cache/vosk/models/vosk-model-small-en-us-0.15')
+                if not os.path.exists(model_path):
+                    print("📥 Downloading Vosk model (small English model, ~50MB)...")
+                    import urllib.request
+                    import zipfile
+                    
+                    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+                    zip_path = os.path.join(os.path.dirname(model_path), 'model.zip')
+                    
+                    # Download the model
+                    url = 'https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip'
+                    urllib.request.urlretrieve(url, zip_path)
+                    
+                    # Extract the model
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        zip_ref.extractall(os.path.dirname(model_path))
+                    
+                    # Clean up
+                    os.remove(zip_path)
+                
+                # Initialize the model and recognizer
+                self.vosk_model = vosk.Model(model_path)
+                self.vosk_recognizer = vosk.KaldiRecognizer(self.vosk_model, 16000)
+                self.pyaudio = pyaudio.PyAudio()
+                self.stt_available = True
+                
+            elif self.stt_engine == 'whisper':
+                # Whisper will be loaded on-demand due to its size
+                self.stt_available = True
+                
+            print(f"✅ STT engine initialized: {self.stt_engine}")
+            
+        except Exception as e:
+            print(f"⚠️  STT initialization error: {e}")
+            print("   Try: pip install pyaudio")
+            if 'No module named ' in str(e):
+                print(f"   Missing module: {str(e).split()[-1]}")
+            self.stt_available = False
         
     def _check_tts(self) -> bool:
         """Sprawdź dostępność TTS"""
@@ -332,6 +398,7 @@ class ContainerOSMVP:
             'info': self._cmd_info,
             'status': self._cmd_info,
             'speak': self._cmd_speak,
+            'listen': self._cmd_listen,
             'voice': self._cmd_speak,
             'plugins': self._cmd_plugins,
             'stats': self._cmd_stats,
@@ -527,14 +594,39 @@ class ContainerOSMVP:
     async def _cmd_speak(self, args):
         """Text-to-speech"""
         if not args:
-            return "Usage: speak <text>"
-        
-        text = " ".join(args)
-        success = self.voice.speak(text)
-        if success:
-            return f"🔊 Spoke: {text}"
+            print("Usage: speak <text>")
+            return
+            
+        text = ' '.join(args)
+        if self.voice.speak(text):
+            print(f"🔊 Said: {text}")
         else:
-            return f"❌ TTS failed: {text}"
+            print("❌ Failed to speak")
+            
+    def _cmd_listen(self, args):
+        """Speech-to-text (STT)"""
+        if not self.voice.stt_available:
+            print("❌ STT is not available. Please install a supported STT engine like Vosk or Whisper.")
+            print("💡 Try: pip install vosk")
+            return ""
+            
+        try:
+            print("🎤 Listening... (press Ctrl+C to stop)")
+            # For now, we'll just simulate listening
+            # In a real implementation, this would use the selected STT engine
+            time.sleep(2)  # Simulate listening time
+            
+            # For now, return a placeholder
+            result = "This is a simulated STT result. Install a proper STT engine for real speech recognition."
+            print(f"🎤 Heard: {result}")
+            return result
+            
+        except KeyboardInterrupt:
+            print("\n⏹️  Stopped listening")
+            return ""
+        except Exception as e:
+            print(f"❌ STT Error: {e}")
+            return ""
     
     async def _cmd_plugins(self, args):
         """Lista pluginów"""

@@ -1,0 +1,14 @@
+# Core dependencies
+docker>=6.0.0
+python-dotenv>=0.19.0
+
+# Optional STT dependencies
+vosk>=0.3.32; platform_system != 'Windows'
+openai-whisper>=20230314; platform_system != 'Windows' and python_version >= '3.8'
+pocketsphinx>=0.1.15; platform_system != 'Windows'
+
+# Development dependencies
+pytest>=6.0.0
+pytest-cov>=2.8.0
+black>=21.5b2
+flake8>=3.9.0
