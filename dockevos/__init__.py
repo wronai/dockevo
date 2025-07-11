@@ -1,5 +1,5 @@
 """
-Container OS - A container-based operating system with voice control and plugin system.
+dockevOS - A container-based operating system with voice control and plugin system.
 
 This package provides a container management system with voice control capabilities,
 extensible through a plugin architecture.

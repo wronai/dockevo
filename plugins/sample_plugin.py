@@ -1,5 +1,5 @@
 
-"""Sample plugin for Container OS MVP"""
+"""Sample plugin for dockevOS MVP"""
 
 def register(event_bus, shell):
     """Register plugin handlers"""

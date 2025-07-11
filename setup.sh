@@ -18,7 +18,7 @@ show_banner() {
     echo -e "${BLUE}"
     cat << 'EOF'
 ╔══════════════════════════════════════════════════╗
-║              Container OS MVP Setup              ║
+║              dockevOS MVP Setup              ║
 ║                                                  ║
 ║  🚀 Quick setup for minimal viable system       ║
 ╚══════════════════════════════════════════════════╝
@@ -66,7 +66,7 @@ check_docker() {
     log "Checking Docker installation..."
     
     if ! command -v docker &> /dev/null; then
-        warn "Docker not found. Container OS will work with limited functionality."
+        warn "Docker not found. dockevOS will work with limited functionality."
         info "To install Docker: curl -fsSL https://get.docker.com | sh"
         return
     fi
@@ -122,7 +122,7 @@ create_project_structure() {
     # Create advanced plugin example
     cat > plugins/advanced_plugin.py << 'EOF'
 """
-Advanced Plugin Example for Container OS MVP
+Advanced Plugin Example for dockevOS MVP
 Shows more complex plugin capabilities
 """
 
@@ -359,13 +359,13 @@ create_launcher() {
     cat > run-container-os.sh << 'EOF'
 #!/bin/bash
 
-# Container OS MVP Launcher
-echo "🚀 Starting Container OS MVP..."
+# dockevOS MVP Launcher
+echo "🚀 Starting dockevOS MVP..."
 
 # Check if main file exists
 if [ ! -f "container-os.py" ]; then
     echo "❌ container-os.py not found"
-    echo "Please run this script from the Container OS directory"
+    echo "Please run this script from the dockevOS directory"
     exit 1
 fi
 
@@ -375,7 +375,7 @@ python3 -c "import docker, psutil" 2>/dev/null || {
     exit 1
 }
 
-# Start Container OS
+# Start dockevOS
 python3 container-os.py
 EOF
 
@@ -388,9 +388,9 @@ create_readme() {
     log "Creating README..."
     
     cat > README.md << 'EOF'
-# Container OS MVP
+# dockevOS MVP
 
-Minimalna wersja Container OS - jeden plik Python realizujący pełną funkcjonalność.
+Minimalna wersja dockevOS - jeden plik Python realizujący pełną funkcjonalność.
 
 ## 🚀 Quick Start
 
@@ -466,7 +466,7 @@ def unregister(event_bus, shell):
 
 ```bash
 # Test TTS
-container-os> speak "Hello Container OS"
+container-os> speak "Hello dockevOS"
 
 # Voice feedback on actions
 container-os> start nginx
@@ -516,7 +516,7 @@ container-os/
 
 ## 🎯 Evolution Path
 
-This MVP can evolve into full Container OS:
+This MVP can evolve into full dockevOS:
 1. Start with single file
 2. Add more plugins
 3. Extend event system
@@ -532,7 +532,7 @@ EOF
 
 show_completion() {
     echo ""
-    echo -e "${GREEN}🎉 Container OS MVP Setup Complete!${NC}"
+    echo -e "${GREEN}🎉 dockevOS MVP Setup Complete!${NC}"
     echo ""
     echo "📁 Created files:"
     echo "  • container-os.py     - Main application"

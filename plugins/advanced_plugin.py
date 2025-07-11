@@ -1,5 +1,5 @@
 """
-Advanced Plugin Example for Container OS MVP
+Advanced Plugin Example for dockevOS MVP
 Shows more complex plugin capabilities
 """
 

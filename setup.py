@@ -27,7 +27,7 @@ setup(
         "Programming Language :: Python :: 3.11",
     ],
     keywords="container, voice-control, docker, plugin-system, tts, stt",
-    packages=find_packages(include=['container_os', 'container_os.*']),
+    packages=find_packages(include=['dockevos', 'dockevos.*']),
     include_package_data=True,
     python_requires=">=3.8, <4",
     install_requires=[
@@ -50,11 +50,11 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'dockevos=container_os.__main__:main',
+            'dockevos=dockevos.__main__:main',
         ],
     },
     package_data={
-        'container_os': ['*.py'],
+        'dockevos': ['*.py'],
     },
     project_urls={
         "Bug Reports": "https://github.com/wronai/dockevo/issues",

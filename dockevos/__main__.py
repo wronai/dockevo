@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Container OS MVP - Minimalna wersja realizująca wszystkie kluczowe funkcje
+dockevOS MVP - Minimalna wersja realizująca wszystkie kluczowe funkcje
 Jednolikowa aplikacja z event bus, voice control, docker management i hot-reload
 
 Instalacja:
@@ -170,6 +170,84 @@ class VoiceService:
         except Exception as e:
             print(f"❌ TTS Error: {e}")
             return False
+            
+    def listen(self, timeout=10) -> str:
+        """Listen for speech and return transcribed text
+        
+        Args:
+            timeout: Maximum time in seconds to listen (0 for no timeout)
+            
+        Returns:
+            str: Transcribed text or empty string if nothing was recognized
+        """
+        if not self.stt_available or not hasattr(self, 'vosk_recognizer'):
+            print("❌ STT is not available. Make sure you have a microphone and required dependencies.")
+            print("💡 Try: pip install pyaudio")
+            return ""
+            
+        print("🎤 Listening... (press Ctrl+C to stop)")
+        
+        try:
+            # Open microphone stream
+            stream = self.pyaudio.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=16000,
+                input=True,
+                frames_per_buffer=8000
+            )
+            stream.start_stream()
+            
+            start_time = time.time()
+            silence_start = None
+            result_text = ""
+            
+            while True:
+                # Check for timeout
+                if timeout > 0 and (time.time() - start_time) > timeout:
+                    print("\n⏱️  Timeout reached")
+                    break
+                    
+                # Read audio data
+                data = stream.read(4000, exception_on_overflow=False)
+                
+                if len(data) == 0:
+                    break
+                    
+                # Process audio with Vosk
+                if self.vosk_recognizer.AcceptWaveform(data):
+                    result = json.loads(self.vosk_recognizer.Result())
+                    if 'text' in result and result['text']:
+                        result_text = result['text']
+                        print(f"\r🎤 Heard: {result_text}", end='', flush=True)
+                        silence_start = None
+                else:
+                    # Check for silence to end of speech
+                    partial = json.loads(self.vosk_recognizer.PartialResult())
+                    if 'partial' in partial and partial['partial']:
+                        print(f"\r🎤 Heard: {partial['partial']}", end='', flush=True)
+                        silence_start = None
+                    elif silence_start is None:
+                        silence_start = time.time()
+                    elif (time.time() - silence_start) > 1.5:  # 1.5 seconds of silence
+                        print("\n🔇 End of speech detected")
+                        break
+                        
+            # Clean up
+            stream.stop_stream()
+            stream.close()
+            
+            print()  # New line after the final flush
+            return result_text.strip()
+            
+        except KeyboardInterrupt:
+            print("\n⏹️  Stopped listening")
+            return ""
+        except Exception as e:
+            print(f"\n❌ STT Error: {e}")
+            if 'No default input device' in str(e):
+                print("   No microphone found. Please check your audio input devices.")
+            return ""
 
 class DockerService:
     """Docker management service"""
@@ -264,7 +342,7 @@ class PluginManager:
     def create_sample_plugin(self):
         """Utwórz przykładowy plugin"""
         sample_plugin = '''
-"""Sample plugin for Container OS MVP"""
+"""Sample plugin for dockevOS MVP"""
 
 def register(event_bus, shell):
     """Register plugin handlers"""
@@ -367,7 +445,7 @@ class UsageTracker:
         }
 
 class ContainerOSMVP:
-    """Główna klasa Container OS MVP"""
+    """Główna klasa dockevOS MVP"""
     
     def __init__(self):
         self.event_bus = EventBus()
@@ -438,7 +516,7 @@ class ContainerOSMVP:
         """Pokaż banner startowy"""
         banner = """
 ══════════════════════════════════════════════════════════════
-                    Container OS MVP                          
+                    dockevOS MVP                          
                                                               
   🐳 Docker Management  🎤 Voice Control  🧩 Plugin System    
   🔄 Hot-Reload        📊 Self-Learning   ⚡ Event-Driven                                                                  
@@ -455,7 +533,7 @@ class ContainerOSMVP:
     
     async def _main_loop(self):
         """Główna pętla"""
-        print("🚀 Container OS MVP ready!")
+        print("🚀 dockevOS MVP ready!")
         
         while self.running:
             try:
@@ -507,7 +585,7 @@ class ContainerOSMVP:
     async def _cmd_help(self, args):
         """Pokaż pomoc"""
         help_text = """
-🆘 Container OS MVP - Available Commands:
+🆘 dockevOS MVP - Available Commands:
 
 📋 System Commands:
   help           Show this help
@@ -603,27 +681,44 @@ class ContainerOSMVP:
         else:
             print("❌ Failed to speak")
             
-    def _cmd_listen(self, args):
+    async def _cmd_listen(self, args):
         """Speech-to-text (STT)"""
         if not self.voice.stt_available:
             print("❌ STT is not available. Please install a supported STT engine like Vosk or Whisper.")
-            print("💡 Try: pip install vosk")
+            print("💡 Try: pip install vosk pyaudio")
+            if not hasattr(self.voice, 'pyaudio'):
+                print("💡 You may need to install system dependencies for PyAudio:")
+                print("   - Ubuntu/Debian: sudo apt-get install portaudio19-dev python3-pyaudio")
+                print("   - macOS: brew install portaudio")
+                print("   - Windows: pip install pipwin && pipwin install pyaudio")
             return ""
             
         try:
-            print("🎤 Listening... (press Ctrl+C to stop)")
-            # For now, we'll just simulate listening
-            # In a real implementation, this would use the selected STT engine
-            time.sleep(2)  # Simulate listening time
+            # Get timeout from args if provided, default to 30 seconds
+            timeout = 30
+            if args and args[0].isdigit():
+                timeout = int(args[0])
+                
+            # Start listening
+            result = self.voice.listen(timeout=timeout)
             
-            # For now, return a placeholder
-            result = "This is a simulated STT result. Install a proper STT engine for real speech recognition."
-            print(f"🎤 Heard: {result}")
-            return result
-            
-        except KeyboardInterrupt:
-            print("\n⏹️  Stopped listening")
-            return ""
+            # If we got a result, let's process it
+            if result:
+                print(f"🎤 Recognized: {result}")
+                
+                # Check if the recognized text is a command
+                if result.lower().startswith(("hey ", "ok ", "computer ", "container ", "os ")):
+                    # Remove wake words and process as command
+                    command = result.split(' ', 1)[1] if ' ' in result else ""
+                    if command:
+                        print(f"🤖 Executing command: {command}")
+                        await self._execute_command(command)
+                
+                return result
+            else:
+                print("❌ No speech detected or recognized.")
+                return ""
+                
         except Exception as e:
             print(f"❌ STT Error: {e}")
             return ""
@@ -673,8 +768,8 @@ Most used commands:"""
 def main():
     """Entry point"""
     try:
-        container_os = ContainerOSMVP()
-        asyncio.run(container_os.start())
+        dockevos = ContainerOSMVP()
+        asyncio.run(dockevos.start())
     except KeyboardInterrupt:
         print("\n👋 Goodbye!")
     except Exception as e:

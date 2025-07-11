@@ -21,7 +21,7 @@ in_venv() {
 
 # Main execution
 main() {
-    log "🚀 Starting Container OS..."
+    log "🚀 Starting dockevOS..."
     
     # Check Python version
     if ! command -v python3 &> /dev/null; then
@@ -40,8 +40,8 @@ main() {
     fi
     
     # Install package in development mode if not already installed
-    if ! python3 -c "import container_os" &> /dev/null; then
-        log "Installing Container OS in development mode..."
+    if ! python3 -c "import dockevos" &> /dev/null; then
+        log "Installing dockevOS in development mode..."
         pip install -e .
     fi
     
@@ -53,8 +53,8 @@ main() {
     done
     
     # Run the application
-    log "Starting Container OS..."
-    python3 -m container_os "$@"
+    log "Starting dockevOS..."
+    python3 -m dockevos "$@"
 }
 
 # Only run if executed directly
