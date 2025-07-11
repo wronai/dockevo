@@ -49,7 +49,7 @@ class PluginManager:
             if not entry.is_dir():
                 continue  # Only consider directories as plugins
             name = entry.name
-            if name in core_plugins or name in {'__pycache__', 'plugin_generator'} or name.startswith('_'):
+            if name in core_plugins or name in {'__pycache__'} or name.startswith('_'):
                 continue
             if not (entry / '__init__.py').exists():
                 continue  # Not a Python package

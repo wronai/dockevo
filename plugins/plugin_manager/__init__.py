@@ -10,13 +10,30 @@ It simply re-exports the contents of the legacy module
 `plugins.plugin_manager` as before.
 """
 
-from importlib import import_module
+import importlib.util
+import importlib.machinery
+from pathlib import Path
 
-# Import the original, single-file implementation and re-export everything so
-# that users of `plugins.plugin_manager` see the same public API.
-_core_mod = import_module("plugins.plugin_manager")
+# ---------------------------------------------------------------------------
+# Dynamically load the original single-file implementation that lives one
+# directory up (plugins/plugin_manager.py).  We register it under a private
+# module name to avoid circular-import issues, then re-export its public API.
+# ---------------------------------------------------------------------------
+_core_path = Path(__file__).parent.parent / "plugin_manager.py"
 
-# Re-export its attributes at package level (except dunder internals)
+# Construct a new module spec + module object
+_spec = importlib.util.spec_from_file_location("plugins._plugin_manager_core", _core_path)
+_core_mod = importlib.util.module_from_spec(_spec)
+loader = _spec.loader  # type: ignore[attr-defined]
+assert loader is not None
+loader.exec_module(_core_mod)  # type: ignore[arg-type]
+
+# Inject into sys.modules so `import plugins._plugin_manager_core` works
+import sys as _sys
+_sys.modules[_spec.name] = _core_mod
+
+# Re-export everything except dunder names so
+# `import plugins.plugin_manager` gives the same symbols.
 globals().update({k: v for k, v in _core_mod.__dict__.items() if not k.startswith("__")})
 
 __all__ = [k for k in globals() if not k.startswith("__")]
