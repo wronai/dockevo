@@ -73,6 +73,18 @@ class PluginGenerator:
 # Plugin setup expected by Plugin Manager
 # ---------------------------------------------------------------------------
 
+def register(event_bus, shell):
+    """Register function expected by the runtime PluginManager.
+
+    The folder-based plugin generator is mostly self-contained – it only needs
+    to instantiate the :class:`PluginGenerator` and return it so that other
+    services can interact with it if necessary.
+    """
+    plugin = PluginGenerator(event_bus, shell)
+    print("📦 Plugin Generator loaded")
+    return plugin
+
+
 def setup():  # noqa: D401 – simple factory
     from plugins.plugin_manager import get_plugin_manager  # lazy import
 

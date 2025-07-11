@@ -389,7 +389,7 @@ class ShellAssistant:
             print(f"❌ Failed to install {package}: {e}")
             return False
     
-    async def _execute_command(self, command: str) -> Tuple[bool, str]:
+    
         """Execute a shell command"""
         if not self.permissions['execute_commands']:
             print("❌ Missing permission to execute commands")
@@ -453,7 +453,7 @@ async def cmd_install(self, *args):
         print(f"❌ Failed to install {package}: {e}")
         return False
 
-async def _execute_command(self, command: str) -> Tuple[bool, str]:
+
     """Execute a shell command"""
     if not self.permissions['execute_commands']:
         print("❌ Missing permission to execute commands")
